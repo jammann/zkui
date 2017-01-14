@@ -64,7 +64,11 @@ public class Main {
         Server server = new Server();
 
         WebAppContext servletContextHandler = new WebAppContext();
-        servletContextHandler.setContextPath("/");
+        if (globalProps.containsKey("contextPath")) {
+        	servletContextHandler.setContextPath(globalProps.getProperty("contextPath"));
+        } else {
+        	servletContextHandler.setContextPath("/");
+        }
         servletContextHandler.setResourceBase("src/main/resources/" + webFolder);
         ClassList clist = ClassList.setServerDefault(server);
         clist.addBefore(JettyWebXmlConfiguration.class.getName(), AnnotationConfiguration.class.getName());
@@ -98,10 +102,16 @@ public class Main {
 
             ServerConnector https = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()), new HttpConnectionFactory(https_config));
             https.setPort(Integer.parseInt(globalProps.getProperty("serverPort")));
+            if (globalProps.containsKey("bindAddress")) {
+            	https.setHost(globalProps.getProperty("bindAddress"));
+            }
             server.setConnectors(new Connector[]{https});
         } else {
             ServerConnector http = new ServerConnector(server, new HttpConnectionFactory(http_config));
             http.setPort(Integer.parseInt(globalProps.getProperty("serverPort")));
+            if (globalProps.containsKey("bindAddress")) {
+            	http.setHost(globalProps.getProperty("bindAddress"));
+            }
             server.setConnectors(new Connector[]{http});
         }
 

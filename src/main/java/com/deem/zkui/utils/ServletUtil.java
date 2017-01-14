@@ -55,8 +55,7 @@ public enum ServletUtil {
                 templateParam.put("authName", session.getAttribute("authName"));
                 templateParam.put("authRole", session.getAttribute("authRole"));
 
-                response.setContentType("text/html;charset=UTF-8");
-                
+                response.setContentType("text/html");
                 Template template = null;
                 long startTime = System.currentTimeMillis();
                 Configuration config = new Configuration();
@@ -75,7 +74,7 @@ public enum ServletUtil {
         try {
             logger.error("Error :" + error);
             Map<String, Object> templateParam = new HashMap<>();
-            response.setContentType("text/html;charset=UTF-8");
+            response.setContentType("text/html");
             Template template = null;
             Configuration config = new Configuration();
             config.setClassForTemplateLoading(request.getServletContext().getClass(), "/");
