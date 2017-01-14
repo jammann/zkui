@@ -66,6 +66,7 @@ public class Main {
         String webFolder = "webapp";
         Server server = new Server();
         
+        // set the context path, default to /
         String contextPath = globalProps.containsKey("contextPath") ? globalProps.getProperty("contextPath"): "/"; 
 
         WebAppContext servletContextHandler = new WebAppContext();
@@ -85,11 +86,13 @@ public class Main {
         staticResourceHandler.setBaseResource(staticResources);
         staticResourceHandler.setWelcomeFiles(new String[]{"html/index.html"});
 
-        ContextHandler ctx = new ContextHandler(contextPath);
-        ctx.setHandler(staticResourceHandler);
+        // need to wrap it in a ContextHandler to make it path-aware
+        // http://stackoverflow.com/questions/14958251/map-jetty-resourcehandler-to-a-url
+        ContextHandler staticResourceHandlerWrapper = new ContextHandler(contextPath);
+        staticResourceHandlerWrapper.setHandler(staticResourceHandler);
 
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[]{ctx, servletContextHandler});
+        handlers.setHandlers(new Handler[]{staticResourceHandlerWrapper, servletContextHandler});
 
         server.setHandler(handlers);
         HttpConfiguration http_config = new HttpConfiguration();
