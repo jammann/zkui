@@ -17,28 +17,32 @@
  */
 package com.deem.zkui.controller;
 
-import freemarker.template.TemplateException;
 import java.io.IOException;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Iterator;
 import java.util.Map;
 import java.util.Properties;
+
 import javax.servlet.ServletException;
 import javax.servlet.annotation.WebServlet;
 import javax.servlet.http.HttpServlet;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 import javax.servlet.http.HttpSession;
-import com.deem.zkui.utils.ServletUtil;
-import com.deem.zkui.utils.ZooKeeperUtil;
+
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.json.simple.parser.ParseException;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import com.deem.zkui.utils.LdapAuth;
-import java.util.Arrays;
+import com.deem.zkui.utils.ServletUtil;
+import com.deem.zkui.utils.ZooKeeperUtil;
+
+import freemarker.template.TemplateException;
 
 @SuppressWarnings("serial")
 @WebServlet(urlPatterns = {"/login"})
@@ -51,11 +55,32 @@ public class Login extends HttpServlet {
         logger.debug("Login Action!");
         try {
             Properties globalProps = (Properties) getServletContext().getAttribute("globalProps");
+
+            // check if we are already authenticated by the reverse proxy
+            if (globalProps.containsKey("headerAuth") && globalProps.getProperty("headerAuth").equals("true")) {
+                if (request.getHeader("remote-user") != null) {
+                    String username = request.getHeader("remote-user").toLowerCase();
+                    JSONArray jsonRoleSet = (JSONArray) ((JSONObject) new JSONParser().parse(globalProps.getProperty("userSet")))
+                            .get("users");
+                    for (Iterator<JSONObject> it = jsonRoleSet.iterator(); it.hasNext();) {
+                        JSONObject jsonUser = it.next();
+                        if (jsonUser.get("username").equals(username.toLowerCase())) {
+                            HttpSession session = request.getSession(true);
+                            String role = (String) jsonUser.get("role");
+                            logger.info("ProxyAuth Login successful: " + username);
+                            session.setAttribute("authName", username);
+                            session.setAttribute("authRole", role);
+                            response.sendRedirect("home");
+                        }
+                    }
+                }
+            }
+
             Map<String, Object> templateParam = new HashMap<>();
             templateParam.put("uptime", globalProps.getProperty("uptime"));
             templateParam.put("loginMessage", globalProps.getProperty("loginMessage"));
             ServletUtil.INSTANCE.renderHtml(request, response, templateParam, "login.ftl.html");
-        } catch (TemplateException ex) {
+        } catch (ParseException | TemplateException ex) {
             logger.error(Arrays.toString(ex.getStackTrace()));
             ServletUtil.INSTANCE.renderError(request, response, ex.getMessage());
         }
