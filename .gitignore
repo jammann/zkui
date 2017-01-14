@@ -1,1 +1,7 @@
 /target/
+/.classpath
+/.project
+/.settings/
+/log4j.properties
+/zkui-out.log
+/zkui.h2.db
