@@ -137,11 +137,11 @@ public class Home extends HttpServlet {
                         request.getSession().setAttribute("flashMsg", "Node created!");
                         dao.insertHistory((String) request.getSession().getAttribute("authName"), request.getRemoteAddr(), "Creating node: " + currentPath + newNode);
                     }
-                    response.sendRedirect("home?zkPath=" + displayPath);
+                    response.sendRedirect("?zkPath=" + displayPath);
                     break;
                 case "Save Property":
                     if (!newProperty.equals("") && !currentPath.equals("") && authRole.equals(ZooKeeperUtil.ROLE_ADMIN)) {
-                        //Save the new node.
+                        //Save the new node.home
                         ZooKeeperUtil.INSTANCE.createNode(currentPath, newProperty, newValue, ServletUtil.INSTANCE.getZookeeper(request, response, zkServerLst[0], globalProps));
                         request.getSession().setAttribute("flashMsg", "Property Saved!");
                         if (ZooKeeperUtil.INSTANCE.checkIfPwdField(newProperty)) {
