@@ -56,7 +56,7 @@ public enum ServletUtil {
                 templateParam.put("authRole", session.getAttribute("authRole"));
 
                 response.setContentType("text/html;charset=UTF-8");
-                
+
                 Template template = null;
                 long startTime = System.currentTimeMillis();
                 Configuration config = new Configuration();

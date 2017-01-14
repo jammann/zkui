@@ -48,13 +48,13 @@ public class AuthFilter implements Filter {
             HttpSession session = request.getSession();
             if (session != null) {
                 if (session.getAttribute("authName") == null || session.getAttribute("authRole") == null) {
-                    response.sendRedirect("/login");
+                    response.sendRedirect("login");
                     return;
                 }
 
             } else {
                 request.setAttribute("fail_msg", "Session timed out!");
-                dispatcher = request.getRequestDispatcher("/Login");
+                dispatcher = request.getRequestDispatcher("login");
                 dispatcher.forward(request, response);
                 return;
             }

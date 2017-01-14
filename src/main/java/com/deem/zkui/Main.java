@@ -17,11 +17,11 @@
  */
 package com.deem.zkui;
 
-import com.deem.zkui.dao.Dao;
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.Date;
 import java.util.Properties;
+
 import org.eclipse.jetty.annotations.AnnotationConfiguration;
 import org.eclipse.jetty.http.HttpVersion;
 import org.eclipse.jetty.server.Connector;
@@ -32,6 +32,7 @@ import org.eclipse.jetty.server.SecureRequestCustomizer;
 import org.eclipse.jetty.server.Server;
 import org.eclipse.jetty.server.ServerConnector;
 import org.eclipse.jetty.server.SslConnectionFactory;
+import org.eclipse.jetty.server.handler.ContextHandler;
 import org.eclipse.jetty.server.handler.HandlerList;
 import org.eclipse.jetty.server.handler.ResourceHandler;
 import org.eclipse.jetty.util.resource.Resource;
@@ -40,6 +41,8 @@ import org.eclipse.jetty.webapp.Configuration.ClassList;
 import org.eclipse.jetty.webapp.JettyWebXmlConfiguration;
 import org.eclipse.jetty.webapp.WebAppContext;
 import org.slf4j.LoggerFactory;
+
+import com.deem.zkui.dao.Dao;
 
 public class Main {
 
@@ -62,10 +65,14 @@ public class Main {
 
         String webFolder = "webapp";
         Server server = new Server();
+        
+        // set the context path, default to /
+        String contextPath = globalProps.containsKey("contextPath") ? globalProps.getProperty("contextPath"): "/"; 
 
         WebAppContext servletContextHandler = new WebAppContext();
-        servletContextHandler.setContextPath("/");
+       	servletContextHandler.setContextPath(contextPath);
         servletContextHandler.setResourceBase("src/main/resources/" + webFolder);
+        
         ClassList clist = ClassList.setServerDefault(server);
         clist.addBefore(JettyWebXmlConfiguration.class.getName(), AnnotationConfiguration.class.getName());
         servletContextHandler.setAttribute("org.eclipse.jetty.server.webapp.ContainerIncludeJarPattern", ".*(/target/classes/|.*.jar)");
@@ -79,8 +86,13 @@ public class Main {
         staticResourceHandler.setBaseResource(staticResources);
         staticResourceHandler.setWelcomeFiles(new String[]{"html/index.html"});
 
+        // need to wrap it in a ContextHandler to make it path-aware
+        // http://stackoverflow.com/questions/14958251/map-jetty-resourcehandler-to-a-url
+        ContextHandler staticResourceHandlerWrapper = new ContextHandler(contextPath);
+        staticResourceHandlerWrapper.setHandler(staticResourceHandler);
+
         HandlerList handlers = new HandlerList();
-        handlers.setHandlers(new Handler[]{staticResourceHandler, servletContextHandler});
+        handlers.setHandlers(new Handler[]{staticResourceHandlerWrapper, servletContextHandler});
 
         server.setHandler(handlers);
         HttpConfiguration http_config = new HttpConfiguration();
@@ -98,10 +110,16 @@ public class Main {
 
             ServerConnector https = new ServerConnector(server, new SslConnectionFactory(sslContextFactory, HttpVersion.HTTP_1_1.asString()), new HttpConnectionFactory(https_config));
             https.setPort(Integer.parseInt(globalProps.getProperty("serverPort")));
+            if (globalProps.containsKey("bindAddress")) {
+            	https.setHost(globalProps.getProperty("bindAddress"));
+            }
             server.setConnectors(new Connector[]{https});
         } else {
             ServerConnector http = new ServerConnector(server, new HttpConnectionFactory(http_config));
             http.setPort(Integer.parseInt(globalProps.getProperty("serverPort")));
+            if (globalProps.containsKey("bindAddress")) {
+            	http.setHost(globalProps.getProperty("bindAddress"));
+            }
             server.setConnectors(new Connector[]{http});
         }
 
